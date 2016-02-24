@@ -17,7 +17,14 @@ class ViewController: UIViewController {
     
     manager.authorize { success, error in
       if success {
-        self.manager.requestHeartRate()
+        self.manager.observeHeartRate { result, error in
+          if let error = error {
+            print("An error ocurred: \(error.localizedDescription)")
+            return
+          }
+          
+          print(result)
+        }
       } else {
         print("Denied: \(error?.localizedDescription)")
       }

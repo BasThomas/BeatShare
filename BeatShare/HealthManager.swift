@@ -27,19 +27,25 @@ class HealthManager {
     }
   }
   
-  func requestHeartRate() {
+  func observeHeartRate(completion: (result: Double?, error: NSError?) -> Void) {
     let sampleType = HKQuantityType.heartRate
     
-    let query = HKObserverQuery(sampleType: sampleType, predicate: nil) { query, completionHandler, error in
+    let observerQuery = HKObserverQuery(sampleType: sampleType, predicate: nil) { query, completionHandler, error in
       if let error = error {
         print("An error occurred: \(error.localizedDescription)")
         abort()
       }
+      print("The completionHandler of the observerQuery was just called. Now request the info for this query.")
       
-      print(query)
-      print("now, request the info for this query.")
+      let sorter = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+      let query = HKSampleQuery(sampleType: sampleType, predicate: nil, limit: 1, sortDescriptors: [sorter]) { _, results, error in
+        let doubleResult = (results as? [HKQuantitySample])?.map { $0.quantity.doubleValueForUnit(HKUnit(fromString: "count/min")) }.last
+        completion(result: doubleResult, error: error)
+      }
+      
+      self.store.executeQuery(query)
     }
     
-    store.executeQuery(query)
+    store.executeQuery(observerQuery)
   }
 }
